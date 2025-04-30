@@ -1,11 +1,25 @@
--- DOORS Ultimate Mobile v5.0
--- Link RAW: https://raw.githubusercontent.com/Samtins/Teste/main/DoorsUltimateMobile.lua
+-- DOORS Ultimate Script v5.1 - Versão Final Garantida
+-- Link RAW: https://raw.githubusercontent.com/Samtins/Teste/main/DoorsUltimate.lua
 
 -- Verificação do jogo
 if game.PlaceId ~= 6516141723 then
-    game:GetService("StarterGui"):SetCore("SendNotification", {
+    game:GetService("StarterGui"):SetCore("SendNotification",{
         Title = "ERRO",
         Text = "Execute apenas em DOORS!",
+        Duration = 5
+    })
+    return
+end
+
+-- Carrega a biblioteca UI otimizada para mobile
+local success, Flux = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/SamPlayZ/UI-Libraries/main/FluxLib.lua"))()
+end)
+
+if not success then
+    game:GetService("StarterGui"):SetCore("SendNotification",{
+        Title = "ERRO",
+        Text = "Falha ao carregar a biblioteca UI",
         Duration = 5
     })
     return
@@ -40,13 +54,12 @@ local Settings = {
     }
 }
 
--- Variáveis de UI
-local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wizard"))()
-local Window = UILibrary:NewWindow("DOORS Ultimate", "Mobile v5.0")
+-- Cria a janela principal com tema escuro
+local Window = Flux.new("DOORS Ultimate", "Dark")
 
 -- Funções principais
 local function Notify(title, text, duration)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
+    game:GetService("StarterGui"):SetCore("SendNotification",{
         Title = title,
         Text = text,
         Duration = duration or 3
@@ -88,25 +101,25 @@ local function ApplyPlayerMods()
 end
 
 -- Criação da interface
-local MainTab = Window:NewTab("Principal")
-local VisualTab = Window:NewTab("Visual")
-local PlayerTab = Window:NewTab("Jogador")
-local MiscTab = Window:NewTab("Misc")
+local MainTab = Window:Tab("Principal", "rbxassetid://6034287595")
+local VisualTab = Window:Tab("Visual", "rbxassetid://6034287588")
+local PlayerTab = Window:Tab("Jogador", "rbxassetid://6034287598")
+local MiscTab = Window:Tab("Misc", "rbxassetid://6034287602")
 
 -- Seção Principal
-local AutoSection = MainTab:NewSection("Automação")
-AutoSection:NewToggle("Evitar Entidades", "Detecta e evita monstros", Settings.AutoAvoid.Enabled, function(state)
+local AutoSection = MainTab:Section("Automação", true)
+AutoSection:Toggle("Evitar Entidades", "Detecta e evita monstros", Settings.AutoAvoid.Enabled, function(state)
     Settings.AutoAvoid.Enabled = state
     Notify("Sistema", state and "Evasão ativada" or "Evasão desativada")
 end)
 
-AutoSection:NewToggle("Pegar Itens", "Coleta itens automaticamente", Settings.Automation.AutoPickItems, function(state)
+AutoSection:Toggle("Pegar Itens", "Coleta itens automaticamente", Settings.Automation.AutoPickItems, function(state)
     Settings.Automation.AutoPickItems = state
 end)
 
 -- Seção Visual
-local VisualSection = VisualTab:NewSection("Render")
-VisualSection:NewToggle("Highlight Entidades", "Destaca monstros perigosos", Settings.Visuals.Highlight, function(state)
+local VisualSection = VisualTab:Section("Render", true)
+VisualSection:Toggle("Highlight Entidades", "Destaca monstros perigosos", Settings.Visuals.Highlight, function(state)
     Settings.Visuals.Highlight = state
     if state then
         HighlightEntities()
@@ -115,7 +128,7 @@ VisualSection:NewToggle("Highlight Entidades", "Destaca monstros perigosos", Set
     end
 end)
 
-VisualSection:NewColorpicker("Cor do Highlight", Settings.Visuals.HighlightColor, function(color)
+VisualSection:Colorpicker("Cor do Highlight", Settings.Visuals.HighlightColor, function(color)
     Settings.Visuals.HighlightColor = color
     if Settings.Visuals.Highlight then
         HighlightEntities(color)
@@ -123,26 +136,26 @@ VisualSection:NewColorpicker("Cor do Highlight", Settings.Visuals.HighlightColor
 end)
 
 -- Seção Jogador
-local PlayerSection = PlayerTab:NewSection("Modificações")
-PlayerSection:NewToggle("Speed Boost", "Aumenta velocidade", Settings.Player.SpeedBoost, function(state)
+local PlayerSection = PlayerTab:Section("Modificações", true)
+PlayerSection:Toggle("Speed Boost", "Aumenta velocidade", Settings.Player.SpeedBoost, function(state)
     Settings.Player.SpeedBoost = state
     ApplyPlayerMods()
 end)
 
-PlayerSection:NewSlider("Multiplicador", "Velocidade do boost", 5, 1, Settings.Player.SpeedMultiplier, false, function(value)
+PlayerSection:Slider("Multiplicador", "Velocidade do boost", 5, 1, Settings.Player.SpeedMultiplier, false, function(value)
     Settings.Player.SpeedMultiplier = value
     if Settings.Player.SpeedBoost then
         ApplyPlayerMods()
     end
 end)
 
-PlayerSection:NewToggle("NoClip", "Atravessar paredes", Settings.Player.NoClip, function(state)
+PlayerSection:Toggle("NoClip", "Atravessar paredes", Settings.Player.NoClip, function(state)
     Settings.Player.NoClip = state
 end)
 
 -- Seção Misc
-local MiscSection = MiscTab:NewSection("Utilitários")
-MiscSection:NewButton("Teleport para Saída", function()
+local MiscSection = MiscTab:Section("Utilitários", true)
+MiscSection:Button("Teleport para Saída", function()
     local exit = workspace:FindFirstChild("ExitDoor")
     if exit then
         game.Players.LocalPlayer.Character:MoveTo(exit.Position + Vector3.new(0, 3, 0))
@@ -152,24 +165,19 @@ MiscSection:NewButton("Teleport para Saída", function()
     end
 end)
 
--- Sistema de arrasto para mobile
+-- Sistema de arrasto otimizado para mobile
 local UserInputService = game:GetService("UserInputService")
-local gui = Window.Gui
 local dragToggle = nil
 local dragSpeed = 0.25
 local dragStart = nil
 local startPos = nil
 
-local function updateInput(input)
-    local delta = input.Position - dragStart
-    gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
-gui.InputBegan:Connect(function(input)
+Window.Gui.InputBegan:Connect(function(input)
     if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) then
         dragToggle = true
         dragStart = input.Position
-        startPos = gui.Position
+        startPos = Window.Gui.Position
+        
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragToggle = false
@@ -181,7 +189,8 @@ end)
 UserInputService.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
         if dragToggle then
-            updateInput(input)
+            local delta = input.Position - dragStart
+            Window.Gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end
 end)
@@ -199,8 +208,20 @@ game:GetService("RunService").Heartbeat:Connect(function()
     
     -- Atualiza modificações do jogador
     ApplyPlayerMods()
+    
+    -- Destaque de entidades
+    if Settings.Visuals.Highlight then
+        HighlightEntities()
+    end
 end)
 
 -- Inicialização
 Notify("DOORS Ultimate", "Interface carregada com sucesso!")
 Window:SelectTab(1)
+
+-- Garante que a UI aparece
+task.spawn(function()
+    repeat task.wait() until Window.Gui
+    Window.Gui.Enabled = true
+    Window.Gui.DisplayOrder = 999
+end)
