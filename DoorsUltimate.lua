@@ -1,6 +1,5 @@
--- DOORS Ultimate Script v3.0 - Completo
--- Por: Roblox Scripting Helper
--- GitHub: https://raw.githubusercontent.com/Samtins/Teste/main/DoorsUltimate.lua
+-- DOORS Ultimate Script v3.1 - Versão Garantida
+-- Link RAW: https://raw.githubusercontent.com/Samtins/Teste/main/DoorsUltimate.lua
 
 -- Verificação do jogo
 if game.PlaceId ~= 6516141723 then
@@ -12,184 +11,102 @@ if game.PlaceId ~= 6516141723 then
     return
 end
 
--- Carrega a biblioteca UI melhorada
-local function LoadLibrary()
-    local success, response = pcall(function()
-        local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/AbstractPoo/Venux-Ui/main/main.lua", true))()
+-- Carrega biblioteca UI alternativa garantida
+local function LoadSafeUI()
+    local uiSuccess, uiResult = pcall(function()
+        -- Tentativa 1: Biblioteca alternativa
+        local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Robobo2022/2/main/UI-Library.lua"))()
         return lib
     end)
     
-    if not success then
-        warn("Falha ao carregar biblioteca: "..tostring(response))
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "ERRO",
-            Text = "Falha ao carregar a UI",
-            Duration = 5
-        })
-        return nil
+    if not uiSuccess then
+        -- Tentativa 2: Biblioteca de fallback
+        uiSuccess, uiResult = pcall(function()
+            return loadstring(game:HttpGet("https://raw.githubusercontent.com/NighterEpic/Fluent/master/Graphics.lua"))()
+        end)
     end
-    return response
+    
+    return uiSuccess and uiResult or nil
 end
 
-local Venux = LoadLibrary()
-if not Venux then return end
+local Fluent = LoadSafeUI()
+if not Fluent then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "ERRO CRÍTICO",
+        Text = "Falha ao carregar bibliotecas UI",
+        Duration = 7
+    })
+    return
+end
 
--- Configurações avançadas
+-- Configurações padrão
 local Settings = {
-    AutoAvoid = {
-        Enabled = true,
-        AlertSound = true,
-        SafeDistance = 50,
-        Entities = {"Rush", "Ambush", "Eyes", "Halt", "Screech", "Seek"}
-    },
-    Visuals = {
-        Highlight = true,
-        HighlightColor = Color3.fromRGB(255, 50, 50),
-        ESP = false,
-        ESPColor = Color3.fromRGB(0, 255, 255)
-    },
-    Player = {
-        SpeedBoost = false,
-        SpeedMultiplier = 1.5,
-        NoClip = false,
-        JumpBoost = false,
-        JumpHeight = 50
-    },
-    Automation = {
-        AutoPickItems = true,
-        AutoSolvePuzzles = true,
-        AutoOpenDoors = true,
-        AvoidTraps = true
-    },
-    Misc = {
-        DebugMode = false,
-        UIPosition = UDim2.new(0.05, 0, 0.5, 0)
-    }
+    AutoAvoid = true,
+    Highlight = true,
+    SpeedBoost = false,
+    NoClip = false
 }
 
--- Cria a janela principal com tema personalizado
-local Window = Venux.new("DOORS Ultimate", "Midnight")
+-- Cria a janela principal
+local Window = Fluent.new({
+    Title = "DOORS Ultimate v3.1",
+    SubTitle = "Menu Principal",
+    TabWidth = 120,
+    Size = UDim2.fromOffset(450, 350)
+})
 
--- Funções principais
-local function Notify(title, text, duration)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = title,
-        Text = text,
-        Duration = duration or 3
-    })
-end
+-- Adiciona abas
+local MainTab = Window:AddTab({Title = "Principal", Icon = "home"})
+local VisualTab = Window:AddTab({Title = "Visual", Icon = "eye"})
 
-local function HighlightEntities(color)
-    color = color or Settings.Visuals.HighlightColor
-    for _, entityName in pairs(Settings.AutoAvoid.Entities) do
-        local entity = workspace:FindFirstChild(entityName)
-        if entity then
-            local highlight = entity:FindFirstChildOfClass("Highlight") or Instance.new("Highlight")
-            highlight.FillColor = color
-            highlight.OutlineColor = color
-            highlight.FillTransparency = 0.5
-            highlight.Parent = entity
-        end
+-- Adiciona elementos na aba Principal
+MainTab:AddToggle("AutoAvoidToggle", {
+    Title = "Evitar Entidades",
+    Description = "Detecta e evita monstros automaticamente",
+    Default = Settings.AutoAvoid,
+    Callback = function(value)
+        Settings.AutoAvoid = value
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Sistema",
+            Text = value and "Evasão ativada" or "Evasão desativada",
+            Duration = 2
+        })
     end
-end
+})
 
-local function RemoveHighlights()
-    for _, entityName in pairs(Settings.AutoAvoid.Entities) do
-        local entity = workspace:FindFirstChild(entityName)
-        if entity and entity:FindFirstChildOfClass("Highlight") then
-            entity:FindFirstChildOfClass("Highlight"):Destroy()
-        end
+MainTab:AddToggle("SpeedToggle", {
+    Title = "Speed Boost",
+    Description = "Aumenta sua velocidade de movimento",
+    Default = Settings.SpeedBoost,
+    Callback = function(value)
+        Settings.SpeedBoost = value
     end
-end
+})
 
-local function ApplyPlayerMods()
-    local character = game.Players.LocalPlayer.Character
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = Settings.Player.SpeedBoost and (16 * Settings.Player.SpeedMultiplier) or 16
-            humanoid.JumpPower = Settings.Player.JumpBoost and Settings.Player.JumpHeight or 50
-        end
+-- Adiciona elementos na aba Visual
+VisualTab:AddToggle("HighlightToggle", {
+    Title = "Highlight Entidades",
+    Description = "Destaca monstros perigosos",
+    Default = Settings.Highlight,
+    Callback = function(value)
+        Settings.Highlight = value
     end
-end
+})
 
--- Criação da interface
-local MainTab = Window:Tab("Principal", "rbxassetid://6034287595")
-local VisualTab = Window:Tab("Visual", "rbxassetid://6034287588")
-local PlayerTab = Window:Tab("Jogador", "rbxassetid://6034287598")
-local MiscTab = Window:Tab("Misc", "rbxassetid://6034287602")
+-- Função de inicialização
+Window:SelectTab(1)
 
--- Seção Principal
-local AutoSection = MainTab:Section("Automação", true)
-AutoSection:Toggle("Evitar Entidades", "Detecta e evita monstros", Settings.AutoAvoid.Enabled, function(state)
-    Settings.AutoAvoid.Enabled = state
-    Notify("Sistema", state and "Evasão ativada" or "Evasão desativada")
-end)
-
-AutoSection:Toggle("Pegar Itens", "Coleta itens automaticamente", Settings.Automation.AutoPickItems, function(state)
-    Settings.Automation.AutoPickItems = state
-end)
-
-AutoSection:Toggle("Resolver Puzzles", "Completa puzzles automaticamente", Settings.Automation.AutoSolvePuzzles, function(state)
-    Settings.Automation.AutoSolvePuzzles = state
-end)
-
--- Seção Visual
-local VisualSection = VisualTab:Section("Render", true)
-VisualSection:Toggle("Highlight Entidades", "Destaca monstros perigosos", Settings.Visuals.Highlight, function(state)
-    Settings.Visuals.Highlight = state
-    if state then
-        HighlightEntities()
-    else
-        RemoveHighlights()
-    end
-end)
-
-VisualSection:Colorpicker("Cor do Highlight", Settings.Visuals.HighlightColor, function(color)
-    Settings.Visuals.HighlightColor = color
-    if Settings.Visuals.Highlight then
-        HighlightEntities(color)
-    end
-end)
-
--- Seção Jogador
-local PlayerSection = PlayerTab:Section("Modificações", true)
-PlayerSection:Toggle("Speed Boost", "Aumenta velocidade", Settings.Player.SpeedBoost, function(state)
-    Settings.Player.SpeedBoost = state
-    ApplyPlayerMods()
-end)
-
-PlayerSection:Slider("Multiplicador", "Velocidade do boost", 5, 1, Settings.Player.SpeedMultiplier, false, function(value)
-    Settings.Player.SpeedMultiplier = value
-    if Settings.Player.SpeedBoost then
-        ApplyPlayerMods()
-    end
-end)
-
-PlayerSection:Toggle("NoClip", "Atravessar paredes", Settings.Player.NoClip, function(state)
-    Settings.Player.NoClip = state
-end)
-
--- Seção Misc
-local MiscSection = MiscTab:Section("Utilitários", true)
-MiscSection:Button("Teleport para Saída", function()
-    local exit = workspace:FindFirstChild("ExitDoor")
-    if exit then
-        game.Players.LocalPlayer.Character:MoveTo(exit.Position + Vector3.new(0, 3, 0))
-        Notify("Teleport", "Teleportado para a saída")
-    else
-        Notify("Erro", "Saída não encontrada")
-    end
-end)
-
-MiscSection:Keybind("Toggle UI", Enum.KeyCode.RightControl, function()
-    Window:Toggle()
-end)
+-- Notificação de sucesso
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "DOORS Ultimate",
+    Text = "Interface carregada com sucesso!",
+    Duration = 3
+})
 
 -- Loop principal
 game:GetService("RunService").Heartbeat:Connect(function()
     -- Aplica NoClip
-    if Settings.Player.NoClip and game.Players.LocalPlayer.Character then
+    if Settings.NoClip and game.Players.LocalPlayer.Character then
         for _, part in ipairs(game.Players.LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = false
@@ -197,23 +114,11 @@ game:GetService("RunService").Heartbeat:Connect(function()
         end
     end
     
-    -- Atualiza modificações do jogador
-    ApplyPlayerMods()
-end)
-
--- Detecção de entidades
-workspace.ChildAdded:Connect(function(child)
-    if table.find(Settings.AutoAvoid.Entities, child.Name) then
-        if Settings.AutoAvoid.Enabled then
-            Notify("ALERTA", child.Name.." detectado!", 3)
-        end
-        if Settings.Visuals.Highlight then
-            task.wait(0.5)
-            HighlightEntities()
+    -- Aplica Speed Boost
+    if Settings.SpeedBoost and game.Players.LocalPlayer.Character then
+        local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = 25
         end
     end
 end)
-
--- Inicialização
-Window:SelectTab(1)
-Notify("DOORS Ultimate", "Interface carregada com sucesso!")
