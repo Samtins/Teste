@@ -1,15 +1,5 @@
--- DOORS Simple Collector v1.0
--- Link RAW: https://raw.githubusercontent.com/Samtins/Teste/main/DoorsSimpleCollector.lua
-
--- Verificação do jogo
-if game.PlaceId ~= 6516141723 then
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "ERRO",
-        Text = "Execute apenas em DOORS!",
-        Duration = 5
-    })
-    return
-end
+-- DOORS Simple Collector v1.1 (Universal)
+-- Link RAW: https://raw.githubusercontent.com/Samtins/Teste/main/DoorsSimpleCollectorUniversal.lua
 
 -- Configuração principal
 local AutoCollect = false
@@ -84,7 +74,7 @@ local dragStart
 local startPos
 
 MainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
         startPos = MainFrame.Position
@@ -98,7 +88,7 @@ MainFrame.InputBegan:Connect(function(input)
 end)
 
 MainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
         dragInput = input
     end
 end)
@@ -116,3 +106,10 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
     Text = "Toque no botão para ativar a coleta!",
     Duration = 3
 })
+
+-- Garante que a UI aparece
+task.spawn(function()
+    repeat task.wait() until ScreenGui
+    ScreenGui.Enabled = true
+    ScreenGui.DisplayOrder = 999
+end)
